@@ -1,49 +1,44 @@
-# Adaptive Multi-Defect Identification via Inverse PINNs
+# Deep Operator Learning for Viscoelastic Constitutive Modeling (Neural UMAT)
 
-## 📌 Overview
-This repository contains a PyTorch-based computational mechanics framework designed to solve complex inverse problems in solid mechanics. Specifically, it employs an **Inverse Physics-Informed Neural Network (PINN)** to autonomously detect, localize, and quantify multiple hidden defects (e.g., micro-voids, material degradation, structural damage) within a continuous material domain by analyzing its spatial deformation field.
+## Overview
+This repository contains a PyTorch-based implementation of deep operator learning techniques to model viscoelastic material behavior. Specifically, it trains a neural network to act as a **Neural UMAT (User Material)** surrogate, learning the complex mapping between continuous strain histories and stress responses governed by the Maxwell material model. 
 
-This approach bridges deep learning and non-destructive evaluation (NDE), offering a purely mesh-free, data-driven alternative to traditional iterative finite element updating methods.
+By replacing classical explicit numerical integration with a trained neural surrogate, this approach significantly accelerates Finite Element Method (FEM) simulations while maintaining high physical fidelity.
 
-## 🔬 Scientific Context & Materials Engineering Application
-In structural health monitoring and materials characterization, internal damage often cannot be directly observed. Instead, engineers must infer the location and severity of defects from measurable surface displacements or strain fields. 
+## Key Features
 
-Traditional inverse solvers rely on computationally expensive gradient-based optimization over heavy Finite Element Method (FEM) meshes. This project utilizes a deep learning surrogate to invert the governing physical equations. The network takes the observable physical state (deformation) as an input and outputs the underlying spatial parameter field (damage distribution).
+* **Physics-Based Data Generation:** Custom simulator for the Maxwell viscoelastic model to generate high-fidelity ground truth data based on explicit time-stepping.
+* **Universal Training Dataset:** A robust data generation pipeline that simulates diverse and arbitrary loading paths to ensure model generalization:
+  * Standard Sine Waves
+  * Ramp-Up Sine Waves (typical in FEM start-up phases)
+  * Random Walk / Noise (arbitrary loading)
+  * Partial Masking (simulating varying initial conditions)
+* **Operator Network Architectures:** * Implementation of a standard **DeepONet** (Branch and Trunk networks) for continuous operator learning.
+  * Implementation of a deep **NeuralUMAT** (Multilayer Perceptron) optimized for discrete time-step strain-history mapping.
+* **Direct FEM Benchmarking:** A built-in simulation loop that directly compares the classical numerical solver against the neural surrogate across hundreds of simulated elements to quantify speedup and error.
 
-## 🧠 Methodology & Model Architecture
-The primary implementation is located in: `Adaptive_Multi_Defect_Identification_(Inverse_PINN) (1).ipynb`
+## Benchmark Results
+The model was tested on a mock 1D FEM simulation loop evaluating 500 elements over multiple time steps using a challenging ramping sine wave load. 
 
-The inverse PINN pipeline is structured as follows:
-1.  **Synthetic Data Generation (Forward Proxy):** * Simulates a continuous material domain containing a highly parameterized topology of defects (varying in $(x, y)$ coordinates, radius $r$, and severity $val$).
-    * Generates the synthetic surface deformation mapping resulting from these internal weak spots.
-2.  **Inverse Physics-Informed Architecture:**
-    * A dense Multilayer Perceptron (MLP) built in PyTorch.
-    * **Inputs:** Spatial coordinates $(x, y)$ and the corresponding measured deformation/displacement.
-    * **Outputs:** The predicted spatial damage parameter (e.g., reduction in localized stiffness).
-3.  **Loss Formulation:**
-    * Minimizes the discrepancy between the measured deformation and the PINN's parameterized structural predictions.
-    * Utilizes adaptive weighting to handle the multi-scale nature of simultaneous minor and severe defects.
+* **Speedup:** **~22.2x faster** than the classical explicit integration method.
+* **Accuracy:** **~3.89% Relative L2 Error** compared to the ground-truth physical equations.
 
-## 💻 Tech Stack
-* **Deep Learning Framework:** PyTorch
-* **Mathematics & Matrix Operations:** NumPy
-* **Visualization (Contour & Field Plots):** Matplotlib
-* **Paradigm:** Mesh-free Inverse Modeling, Physics-Informed Machine Learning
+*(Results are based on the standard `NeuralUMAT` architecture trained over 14,500 epochs).*
 
-## 🚀 How to Run
-1.  Ensure your environment has Python 3.8+ installed with `torch`, `numpy`, and `matplotlib`.
-2.  Open the Jupyter Notebook:
-    ```bash
-    jupyter notebook "Adaptive_Multi_Defect_Identification_(Inverse_PINN) (1).ipynb"
-    ```
-3.  Execute the cells sequentially to:
-    * Initialize the multi-defect array (e.g., center weak spot, off-axis severe damage).
-    * Generate the synthetic deformation tensor.
-    * Train the inverse neural network to back-calculate the defect locations.
-    * Visualize the predicted damage field versus the exact synthetic ground truth.
+## Dependencies
+To run the notebook, you need the following Python libraries installed:
+* `torch` (PyTorch)
+* `numpy`
+* `matplotlib`
 
-## 📊 Evaluation Metrics
-The accuracy of the inverse solver is quantified using:
-* **Defect Localization Error:** The spatial offset between the predicted and actual defect centroids.
-* **Severity Quantification:** The error in predicted localized stiffness reduction.
-* **Global $L_2$ Norm:** The overall topological reconstruction accuracy across the continuous 2D domain.
+## Project Structure (Notebook Flow)
+
+1. **Physics Generation:** Defines the material properties ($E = 10.0$, $\tau = 2.0$) and generates normalized strain-to-stress datasets using the Maxwell governing equations.
+2. **DeepONet Implementation:** Trains a continuous operator network separating the input functional space (strain history sensors) and the evaluation domain (time).
+3. **Universal Neural UMAT:** Generates a broader, multi-modal dataset to train a deeper Sequential MLP, capable of handling arbitrary loading envelopes.
+4. **Evaluation & Visualization:** Runs the side-by-side benchmark, plotting the stress response overlay and a bar chart detailing the computational time reduction.
+
+## Usage
+Simply open `Operator_Learning_ (2).ipynb` in Jupyter Notebook or Google Colab and run the cells sequentially. The code will automatically generate the synthetic dataset, train the models, and output the comparative benchmark plots. 
+
+No external datasets are required as all physical data is generated programmatically within the notebook.
